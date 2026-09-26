@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bioviz"
+version = "0.1.0"
+description = "Automated PyMOL video rendering pipeline for protein-ligand structural simulations."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+    { name = "Jeffrey Yam", email = "jyam478@gmail.com" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+    "pymol-open-source-whl",
+    "opencv-python",
+    "numpy"
+]
+
+[project.urls]
+Homepage = "https://github.com/kychilly/BioViz"
+
+[project.scripts]
+bioviz-render = "bioviz.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

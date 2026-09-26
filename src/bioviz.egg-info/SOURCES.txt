@@ -1,0 +1,14 @@
+LICENSE
+README.md
+pyproject.toml
+src/bioviz/__init__.py
+src/bioviz/cli.py
+src/bioviz/compiler.py
+src/bioviz/engine.py
+src/bioviz/parser.py
+src/bioviz.egg-info/PKG-INFO
+src/bioviz.egg-info/SOURCES.txt
+src/bioviz.egg-info/dependency_links.txt
+src/bioviz.egg-info/entry_points.txt
+src/bioviz.egg-info/requires.txt
+src/bioviz.egg-info/top_level.txt

@@ -1,0 +1,28 @@
+Metadata-Version: 2.4
+Name: bioviz
+Version: 0.1.0
+Summary: Automated PyMOL video rendering pipeline for protein-ligand structural simulations.
+Author-email: Jeffrey Yam <jyam478@gmail.com>
+Project-URL: Homepage, https://github.com/kychilly/BioViz
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Topic :: Scientific/Engineering :: Bio-Informatics
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: pymol-open-source-whl
+Requires-Dist: opencv-python
+Requires-Dist: numpy
+Dynamic: license-file
+
+# BioViz Pipeline
+
+A Python package designed for structural biologists and researchers to automate PyMOL visualizations and generate polished 3D video simulations of ligand-protein active site binding.
+
+## Installation
+
+To install the package in editable mode for local development:
+
+```bash
+pip install -e .
