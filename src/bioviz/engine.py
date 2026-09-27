@@ -33,63 +33,121 @@ class PyMoLEngine:
     def render_full_binding_simulation(self, apo_protein: str, holo_protein: str, ligand_path: str,
                                        output_frames_dir: str, num_frames: int = 60) -> str:
         """
-        Executes a phase-controlled binding trajectory across num_frames using robust
-        frame-based state switching:
-        - 0% to 25% (Phase 1): Ligand translates inward toward the active site.
-        - 25% to 75% (Phase 2): Ligand resides in active site while protein morphs (Apo <-> Holo).
-        - 75% to 100% (Phase 3): Ligand translates outward (unbinding).
+        Executes a phase-controlled binding trajectory with a rigidly locked static camera
+        zoomed tightly onto the active site, clean single-conformation ligand rendering,
+        and true protein structural morphing.
         """
         os.makedirs(output_frames_dir, exist_ok=True)
         pymol.cmd.delete("all")
 
-        # 1. Load aligned structures into multi-state object
+        # 1. Load Apo and Holo structures for coordinate morphing
+        pymol.cmd.load(apo_protein, "apo_src")
+        pymol.cmd.load(holo_protein, "holo_src")
+
+        apo_coords = []
+        pymol.cmd.iterate_state(1, "apo_src", "apo_coords.append((x, y, z))", space={'apo_coords': apo_coords})
+        apo_coords = np.array(apo_coords)
+
+        holo_coords = []
+        pymol.cmd.iterate_state(1, "holo_src", "holo_coords.append((x, y, z))", space={'holo_coords': holo_coords})
+        holo_coords = np.array(holo_coords)
+
+        pymol.cmd.delete("apo_src")
+        pymol.cmd.delete("holo_src")
+
+        if len(apo_coords) != len(holo_coords):
+            min_len = min(len(apo_coords), len(holo_coords))
+            apo_coords = apo_coords[:min_len]
+            holo_coords = holo_coords[:min_len]
+
+        # Create multi-state protein morph object
         pymol.cmd.load(apo_protein, "protein_morph", state=1)
-        pymol.cmd.load(holo_protein, "protein_morph", state=2)
+        for f in range(2, num_frames + 1):
+            pymol.cmd.create("protein_morph", "protein_morph", 1, f)
 
-        # Expand states to match num_frames if num_frames > 2
-        if num_frames > 2:
-            for i in range(3, num_frames + 1):
-                pymol.cmd.create("protein_morph", "protein_morph", 2, i)
-
-        # 2. Handle ligand loading
+        # 2. Handle ligand loading cleanly
         has_ligand = False
         if ligand_path and os.path.exists(ligand_path):
-            pymol.cmd.load(ligand_path, "ligand")
+            pymol.cmd.load(ligand_path, "ligand_template")
             has_ligand = True
         else:
             pymol.cmd.select("potential_ligand", "hetatm and not solvent")
             if pymol.cmd.count_selected("potential_ligand") > 0:
-                pymol.cmd.create("ligand", "potential_ligand")
+                pymol.cmd.create("ligand_template", "potential_ligand")
                 has_ligand = True
             pymol.cmd.delete("potential_ligand")
 
         if has_ligand:
+            # Create a multi-state ligand object matching num_frames to prevent artifacts
+            pymol.cmd.create("ligand", "ligand_template", 1, 1)
+            for f in range(2, num_frames + 1):
+                pymol.cmd.create("ligand", "ligand_template", 1, f)
+            pymol.cmd.delete("ligand_template")
+
             pymol.cmd.show("sticks", "ligand")
+            pymol.cmd.show("spheres", "ligand")
+            pymol.cmd.set("sphere_scale", 0.25, "ligand")
             pymol.cmd.color("cyan", "ligand")
 
             base_coords = []
             pymol.cmd.iterate_state(1, "ligand", "base_coords.append((x, y, z))", space={'base_coords': base_coords})
             base_coords = np.array(base_coords)
 
-        # General visual setup
+        # General visual styling
         pymol.cmd.show("cartoon", "protein_morph")
         pymol.cmd.color("slate", "protein_morph")
         pymol.cmd.bg_color("white")
         pymol.cmd.set("ray_shadows", 0)
         pymol.cmd.set("antialias", 2)
 
-        pymol.cmd.mset(f"1x{num_frames}")
-        print(f"Rendering phase-controlled binding simulation across {num_frames} frames...")
+        print(f"Rendering phase-controlled binding simulation across {num_frames} frames with locked static camera...")
 
-        entry_offset = np.array([0.0, 0.0, 25.0])
+        entry_offset = np.array([0.0, 0.0, 20.0])
+
+        # --- Establish 100% Static Camera Tightly Zoomed on Active Site ---
+        pymol.cmd.frame(1)
+        if has_ligand:
+            # Center and zoom tightly on the active site pocket residues surrounding the docked ligand
+            pymol.cmd.zoom("protein_morph within 5 of ligand", buffer=2.5)
+        else:
+            pymol.cmd.zoom("protein_morph", buffer=4.0)
+
+        # Capture the immutable camera view matrix
+        locked_view = pymol.cmd.get_view()
 
         for i in range(1, num_frames + 1):
             fraction = (i - 1) / max(1, num_frames - 1)
-
-            # Use PyMOL's frame command to drive both animation timeline and multi-state mapping
             pymol.cmd.frame(i)
 
+            # --- Phase-Based Protein Structural Morphing (Apo -> Holo -> Apo) ---
+            if fraction <= 0.25:
+                morph_progress = 0.0
+            elif fraction <= 0.75:
+                morph_progress = (fraction - 0.25) / 0.50
+            else:
+                morph_progress = 1.0 - ((fraction - 0.75) / 0.25)
+
+            interp_protein_coords = apo_coords * (1.0 - morph_progress) + holo_coords * morph_progress
+
+            p_idx = 0
+
+            def update_protein_coords(x, y, z):
+                nonlocal p_idx
+                if p_idx < len(interp_protein_coords):
+                    val = interp_protein_coords[p_idx]
+                    p_idx += 1
+                    return list(val)
+                return [x, y, z]
+
+            pymol.cmd.alter_state(
+                i,
+                "protein_morph",
+                "(x, y, z) = update_protein_coords(x, y, z)",
+                space={'update_protein_coords': update_protein_coords}
+            )
+
             if has_ligand:
+                # --- Phase-Based Ligand Translation per state ---
                 if fraction <= 0.25:
                     t_factor = 1.0 - (fraction / 0.25)
                 elif fraction <= 0.75:
@@ -100,47 +158,42 @@ class PyMoLEngine:
                 current_shift = entry_offset * t_factor
                 shifted_coords = base_coords + current_shift
 
-                coord_idx = 0
+                l_idx = 0
 
-                def update_coords(x, y, z):
-                    nonlocal coord_idx
-                    val = shifted_coords[coord_idx]
-                    coord_idx += 1
-                    return list(val)
+                def update_ligand_coords(x, y, z):
+                    nonlocal l_idx
+                    if l_idx < len(shifted_coords):
+                        val = shifted_coords[l_idx]
+                        l_idx += 1
+                        return list(val)
+                    return [x, y, z]
 
                 pymol.cmd.alter_state(
-                    1,
+                    i,
                     "ligand",
-                    "(x, y, z) = update_coords(x, y, z)",
-                    space={'update_coords': update_coords, 'shifted_coords': shifted_coords}
+                    "(x, y, z) = update_ligand_coords(x, y, z)",
+                    space={'update_ligand_coords': update_ligand_coords}
                 )
 
+                # Active site highlighting & hydrogen bonds specific to state i
                 pymol.cmd.delete("h_bonds")
-                pymol.cmd.select("active_site", "protein_morph within 4.5 of ligand")
+                pymol.cmd.select("active_site", f"protein_morph and state {i} within 4.5 of ligand and state {i}")
                 pymol.cmd.show("sticks", "active_site")
                 pymol.cmd.color("yellow", "active_site and elem C")
 
                 try:
-                    pymol.cmd.distance("h_bonds", "ligand", "active_site", 3.8)
+                    pymol.cmd.distance("h_bonds", f"ligand and state {i}", f"active_site and state {i}", 3.8)
                     pymol.cmd.color("hotpink", "h_bonds")
                 except Exception:
                     pass
 
-                zoom_target = "ligand or active_site"
-            else:
-                zoom_target = "protein_morph"
-
-            pymol.cmd.zoom(zoom_target, buffer=4.0)
-            rock_angle = 15.0 * np.sin(fraction * 2.0 * np.pi)
-            if i == 1:
-                pymol.cmd.orient(zoom_target)
-            else:
-                pymol.cmd.turn("y", rock_angle / num_frames)
+            # STRICTLY ENFORCE LOCKED STATIC CAMERA ON EVERY FRAME
+            pymol.cmd.set_view(locked_view)
 
             frame_path = os.path.join(output_frames_dir, f"frame_{i:04d}.png")
             pymol.cmd.png(frame_path, width=1200, height=900, ray=0)
             print(f"frame {i} completed")
 
         pymol.cmd.delete("all")
-        print(f"All {num_frames} phase-controlled frames successfully exported.")
+        print(f"All {num_frames} frames successfully exported with a locked active-site zoom.")
         return output_frames_dir
