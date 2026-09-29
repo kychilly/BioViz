@@ -14,6 +14,8 @@ License-File: LICENSE
 Requires-Dist: pymol-open-source-whl
 Requires-Dist: opencv-python
 Requires-Dist: numpy
+Requires-Dist: biopython
+Requires-Dist: requests
 Dynamic: license-file
 
 # BioViz Pipeline

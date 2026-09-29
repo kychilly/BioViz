@@ -1,3 +1,5 @@
 pymol-open-source-whl
 opencv-python
 numpy
+biopython
+requests

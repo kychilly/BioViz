@@ -1,0 +1,9 @@
+residue_position,mutation,conservation,pathogenicity,delta_g,severity
+1,-1-,0.76,0.47,-0.95,BENIGN
+1,-1-,0.77,0.48,-0.7,BENIGN
+2,-2-,0.78,0.49,-0.45,BENIGN
+2,-2-,0.79,0.51,-0.2,BENIGN
+2,-2-,0.8,0.53,0.05,BENIGN
+3,-3-,0.81,0.54,0.3,BENIGN
+10,-10-,0.8,0.87,1.55,HIGH
+17,-17-,0.77,0.71,2.3,HIGH

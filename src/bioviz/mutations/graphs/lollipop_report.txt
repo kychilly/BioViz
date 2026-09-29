@@ -1,0 +1,5 @@
+
+--- Protein Domain Architecture & Lollipop Mapping ---
+Domain: N-Terminal Domain [1-5] (Structural) -> 🍭 🍭 🍭 🍭 🍭 🍭 (Count: 6)
+Domain: Catalytic Active Site [6-10] (Active Site) -> 🍭 (Count: 1)
+Domain: Transmembrane Region [11-20] (Membrane) -> 🍭 (Count: 1)

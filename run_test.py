@@ -40,7 +40,7 @@ def main():
 
     print("=== Step 3: Initializing PyMoLEngine & Rendering Frames ===")
     output_frames_dir = "rendered_frames"
-    output_video_path = "binding_simulation.mp4"
+    output_video_path = "rendering_videos/binding_simulation.mp4"
 
     # Initialize engine and setup scene
     engine = PyMoLEngine(headless=True)
