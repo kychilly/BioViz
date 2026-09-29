@@ -1,4 +1,4 @@
-from bioviz.mutations.video_compiler import VideoCompiler
+from bioviz import VideoCompiler
 
 
 def main():

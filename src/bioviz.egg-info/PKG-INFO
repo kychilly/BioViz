@@ -15,6 +15,8 @@ Requires-Dist: pymol-open-source-whl
 Requires-Dist: opencv-python
 Requires-Dist: numpy
 Requires-Dist: biopython
+Requires-Dist: mdanalysis>=2.5.0
+Requires-Dist: numpy>=1.20.0
 Requires-Dist: requests
 Dynamic: license-file
 

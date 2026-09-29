@@ -1,11 +1,10 @@
-from bioviz.mutations import (
+from bioviz import (
     MutationAligner,
     VariantImpactAnalyzer,
     GenomeTrackRenderer,
     DomainLollipopAnalyzer,
     StructuralIntegrator
 )
-from bioviz.mutations.video_compiler import VideoCompiler
 
 
 def test_pipeline():
@@ -49,7 +48,7 @@ def test_pipeline():
     #     output_dir="src/bioviz/mutations/PyMOL_rendering"
     # )
     print("8. Calculating Effect & Severity Heatmap Matrix...")
-    from bioviz.mutations.effect_heatmap import EffectSeverityHeatmap
+    from bioviz import EffectSeverityHeatmap
 
     heatmap_analyzer = EffectSeverityHeatmap()
     severity_matrix = heatmap_analyzer.compute_severity_matrix(annotated_variants)

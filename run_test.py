@@ -7,7 +7,7 @@ from bioviz import MoleculeParser, PyMoLEngine, VideoCompiler
 def main():
     print("=== Step 1: Downloading Sample PDB (1IEP: Kinase-Inhibitor Complex) ===")
     pdb_id = "1iep"
-    data_dir = "sample_data"
+    data_dir = "src/bioviz/dynamics/sample_data"
     os.makedirs(data_dir, exist_ok=True)
 
     raw_pdb_path = os.path.join(data_dir, f"{pdb_id}.pdb")

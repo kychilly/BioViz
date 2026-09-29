@@ -1,8 +1,8 @@
 import argparse
 import os
-from .parser import MoleculeParser
-from .engine import PyMoLEngine
-from .compiler import VideoCompiler
+from bioviz.rendering.parser import MoleculeParser
+from bioviz.rendering.engine import PyMoLEngine
+from bioviz.rendering.compiler import VideoCompiler
 
 
 def main():
