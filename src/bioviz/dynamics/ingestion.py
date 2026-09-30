@@ -1,8 +1,3 @@
-"""
-BioViz Dynamics - Ingestion and Alignment Engine
-Handles loading of atomic topologies and coordinate trajectories,
-automatic PBC unwrapping, centering, and least-squares backbone alignment.
-"""
 
 import os
 from typing import Optional
