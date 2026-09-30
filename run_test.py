@@ -39,8 +39,8 @@ def main():
     print(alignment_msg := "Saved cleaned coordinates successfully.")
 
     print("=== Step 3: Initializing PyMoLEngine & Rendering Frames ===")
-    output_frames_dir = "rendered_frames"
-    output_video_path = "rendering_videos/binding_simulation.mp4"
+    output_frames_dir = "src/bioviz/rendering/rendered_frames"
+    output_video_path = "src/bioviz/rendering/rendering_videos/binding_simulation.mp4"
 
     # Initialize engine and setup scene
     engine = PyMoLEngine(headless=True)

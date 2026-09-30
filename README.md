@@ -7,4 +7,4 @@ A Python package designed for structural biologists and researchers to automate 
 To install the package in editable mode for local development:
 
 ```bash
-pip install -e .
+pip install -bioviz .

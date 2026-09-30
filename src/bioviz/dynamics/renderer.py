@@ -86,7 +86,6 @@ class TrajectoryVideoRenderer:
 
             return ax_struct, ax_metric
 
-        # Total frames to render = number of trajectory steps * repetition multiplier
         total_animation_frames = total_steps * frames_per_step
 
         ani = animation.FuncAnimation(
@@ -97,7 +96,7 @@ class TrajectoryVideoRenderer:
             blit=False
         )
 
-        # Save output video using the bundled imageio_ffmpeg binary path
+        # Save output video
         output_path = Path(output_mp4_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 

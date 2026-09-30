@@ -66,28 +66,15 @@ class PyMoLEngine:
                                        output_frames_dir: str, num_frames: int = 60,
                                        align_selection: str = "name CA") -> str:
         """
-        Executes a phase-controlled binding trajectory with a rigidly locked static camera
-        zoomed tightly onto the active site, clean single-conformation ligand rendering,
-        and true protein structural morphing.
-
         Phases (matched to fraction of num_frames):
           0%   - 25%: ligand travels INTO the pocket, protein stays in the apo conformation
           25%  - 75%: ligand is bound/settled, protein conformation morphs apo -> holo -> apo
           75%  - 100%: ligand travels back OUT of the pocket, protein returns to apo
-
-        align_selection: atom-name/resi filter (evaluated against BOTH apo_src and
-          holo_src) used to compute the rigid-body superposition of holo onto apo
-          before any interpolation happens. Defaults to "name CA" (backbone-only
-          fit, the normal approach). If you know your protein has a large moving
-          domain (e.g. adenylate kinase's LID/NMP-binding domains), you can restrict
-          this to a stable "core" domain selection (e.g. "name CA and resi 1-29+68-117+167-214"
-          for the classic E. coli AK numbering) so that domain's motion isn't
-          washed out by fitting on the whole molecule.
         """
+
         os.makedirs(output_frames_dir, exist_ok=True)
         pymol.cmd.delete("all")
 
-        # 1. Load Apo and Holo structures for coordinate morphing
         pymol.cmd.load(apo_protein, "apo_src")
         pymol.cmd.load(holo_protein, "holo_src")
 
@@ -114,14 +101,6 @@ class PyMoLEngine:
             apo_coords = apo_coords[:min_len]
             holo_coords = holo_coords[:min_len]
 
-        # --- Superpose holo onto apo's coordinate frame ---
-        # Two separately solved structures are essentially never in the same
-        # crystallographic frame. Without this step, blending apo_coords and
-        # holo_coords index-by-index makes the WHOLE protein appear to slide/
-        # spin across frames (easily mistaken for "the camera rotating"), and
-        # it can push the ligand far enough from protein_morph that the
-        # active-site zoom selection comes back empty (so the camera never
-        # actually zooms in).
         name_filter = align_selection.replace("name ", "").strip() if align_selection.startswith("name ") else None
         if name_filter:
             fit_mask = [i for i in range(len(apo_names))
@@ -138,24 +117,17 @@ class PyMoLEngine:
         holo_coords = _apply_transform(holo_coords, R, t)
 
         pymol.cmd.delete("apo_src")
-        # NOTE: holo_src stays loaded a bit longer — we may need it below to
-        # auto-detect a ligand that only exists in the holo (bound) structure.
 
-        # Create multi-state protein morph object
         pymol.cmd.load(apo_protein, "protein_morph", state=1)
         for f in range(2, num_frames + 1):
             pymol.cmd.create("protein_morph", "protein_morph", 1, f)
 
-        # 2. Handle ligand loading cleanly
         has_ligand = False
         if ligand_path and os.path.exists(ligand_path):
             pymol.cmd.load(ligand_path, "ligand_template")
             has_ligand = True
         else:
-            # FIX: an apo structure by definition has no bound ligand, so
-            # auto-detecting hetatms from the apo side (as the old code did)
-            # will almost always find nothing. The ligand — if any — lives in
-            # the HOLO structure, so we look there instead, before deleting it.
+
             pymol.cmd.select("potential_ligand", "holo_src and hetatm and not solvent")
             if pymol.cmd.count_atoms("potential_ligand") > 0:
                 pymol.cmd.create("ligand_template", "potential_ligand")
@@ -165,10 +137,7 @@ class PyMoLEngine:
         pymol.cmd.delete("holo_src")
 
         if has_ligand:
-            # The ligand's raw coordinates came from ligand_path or from
-            # holo_src — either way, they're in holo's ORIGINAL (unaligned)
-            # frame. Apply the exact same superposition transform so the
-            # ligand ends up co-located with the aligned holo/apo structures.
+
             raw_ligand_coords = []
             pymol.cmd.iterate_state(1, "ligand_template", "raw_ligand_coords.append((x, y, z))",
                                      space={'raw_ligand_coords': raw_ligand_coords})
@@ -187,9 +156,6 @@ class PyMoLEngine:
             pymol.cmd.alter_state(1, "ligand_template", "(x, y, z) = _seed_ligand_coords(x, y, z)",
                                   space={'_seed_ligand_coords': _seed_ligand_coords})
 
-            # Create a multi-state ligand object matching num_frames to prevent artifacts.
-            # Because ligand_template's coordinates are now already aligned, every
-            # duplicated state below inherits the correct, aligned pose.
             pymol.cmd.create("ligand", "ligand_template", 1, 1)
             for f in range(2, num_frames + 1):
                 pymol.cmd.create("ligand", "ligand_template", 1, f)
@@ -204,7 +170,6 @@ class PyMoLEngine:
             pymol.cmd.iterate_state(1, "ligand", "base_coords.append((x, y, z))", space={'base_coords': base_coords})
             base_coords = np.array(base_coords)
 
-        # General visual styling
         pymol.cmd.show("cartoon", "protein_morph")
         pymol.cmd.color("slate", "protein_morph")
         pymol.cmd.bg_color("white")
@@ -215,15 +180,10 @@ class PyMoLEngine:
 
         entry_offset = np.array([0.0, 0.0, 20.0])
 
-        # --- Establish 100% Static Camera Tightly Zoomed on Active Site ---
         pymol.cmd.frame(1)
         if has_ligand:
             zoom_sele = "(protein_morph within 5 of ligand)"
             if pymol.cmd.count_atoms(zoom_sele) == 0:
-                # Safety net: if the pocket selection still comes back empty
-                # (e.g. an unusual ligand/binding geometry), widen the cutoff
-                # once and warn, rather than silently leaving the default
-                # whole-molecule view in place.
                 print("WARNING: no protein_morph atoms found within 5 of ligand after alignment; "
                       "widening the zoom cutoff to 10 and re-checking.")
                 zoom_sele = "(protein_morph within 10 of ligand)"
@@ -231,14 +191,12 @@ class PyMoLEngine:
         else:
             pymol.cmd.zoom("protein_morph", buffer=4.0)
 
-        # Capture the immutable camera view matrix
         locked_view = pymol.cmd.get_view()
 
         for i in range(1, num_frames + 1):
             fraction = (i - 1) / max(1, num_frames - 1)
             pymol.cmd.frame(i)
 
-            # --- Phase-Based Protein Structural Morphing (Apo -> Holo -> Apo) ---
             if fraction <= 0.25:
                 morph_progress = 0.0
             elif fraction <= 0.75:
@@ -266,7 +224,6 @@ class PyMoLEngine:
             )
 
             if has_ligand:
-                # --- Phase-Based Ligand Translation per state ---
                 if fraction <= 0.25:
                     t_factor = 1.0 - (fraction / 0.25)
                 elif fraction <= 0.75:
@@ -294,14 +251,6 @@ class PyMoLEngine:
                     space={'update_ligand_coords': update_ligand_coords}
                 )
 
-                # FIX: reset the previous frame's active-site highlighting
-                # before computing this frame's. cmd.show()/cmd.color() are
-                # additive per-atom flags in PyMOL — they never clear
-                # themselves. Without this reset, every residue the ligand
-                # ever passed near over all 60 frames stays permanently lit
-                # up in yellow sticks, which is exactly the growing black/
-                # yellow "mass" in the rendered video (dozens of frames'
-                # worth of overlapping, never-hidden stick representations).
                 pymol.cmd.hide("sticks", "protein_morph")
                 pymol.cmd.color("slate", "protein_morph")
 

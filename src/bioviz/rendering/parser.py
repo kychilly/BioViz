@@ -10,12 +10,9 @@ class MoleculeParser:
             raise FileNotFoundError(f"Target PDB file not found at: {file_path}")
         return os.path.abspath(file_path)
 
+    # Download PDB, clean polymer, extract organic ligands
     @staticmethod
     def process_arbitrary_pdb(pdb_id: str, output_dir: str = "sample_data") -> dict:
-        """
-        Dynamically downloads any PDB ID, cleans the polymer,
-        and automatically detects and extracts any bound organic ligand.
-        """
         os.makedirs(output_dir, exist_ok=True)
         raw_pdb = os.path.join(output_dir, f"{pdb_id.lower()}.pdb")
         protein_clean = os.path.join(output_dir, f"{pdb_id.lower()}_protein.pdb")
@@ -53,10 +50,6 @@ class MoleculeParser:
 
     @staticmethod
     def fetch_multi_state_complex(apo_id: str = "4ake", holo_id: str = "1ake", output_dir: str = "sample_data") -> dict:
-        """
-        Downloads both the open/apo state and closed/holo state PDBs,
-        cleans them, and extracts the bound ligand from the holo structure.
-        """
         os.makedirs(output_dir, exist_ok=True)
 
         apo_raw = os.path.join(output_dir, f"{apo_id.lower()}_apo.pdb")
@@ -66,28 +59,26 @@ class MoleculeParser:
         holo_clean = os.path.join(output_dir, "protein_holo_clean.pdb")
         ligand_path = os.path.join(output_dir, "ligand_bound.sdf")
 
-        # 1. Download Apo State
+        # Download Apo State
         if not os.path.exists(apo_raw):
             url_apo = f"https://files.rcsb.org/download/{apo_id.lower()}.pdb"
             print(f"Fetching Apo state ({apo_id.upper()})...")
             urllib.request.urlretrieve(url_apo, apo_raw)
 
-        # 2. Download Holo State
+        # Download Holo State
         if not os.path.exists(holo_raw):
             url_holo = f"https://files.rcsb.org/download/{holo_id.lower()}.pdb"
             print(f"Fetching Holo state ({holo_id.upper()})...")
             urllib.request.urlretrieve(url_holo, holo_raw)
 
-        # 3. Process structures via PyMOL headless engine
+        # Process structures via PyMOL headless engine
         pymol.finish_launching(['pymol', '-qc'])
         pymol.cmd.delete("all")
 
-        # Clean Apo
         pymol.cmd.load(apo_raw, "apo")
         pymol.cmd.remove("solvent")
         pymol.cmd.save(apo_clean, "apo and polymer")
 
-        # Clean Holo & extract ligand
         pymol.cmd.load(holo_raw, "holo")
         pymol.cmd.remove("solvent")
         pymol.cmd.save(holo_clean, "holo and polymer")
@@ -104,19 +95,16 @@ class MoleculeParser:
             "ligand": ligand_path
         }
 
+    # Aligns protein backbone of PDB to target PDB
     @staticmethod
     def align_structures(mobile_pdb: str, target_pdb: str, output_aligned_path: str) -> str:
-        """
-        Structurally aligns the protein backbone of a mobile PDB file to a target PDB file
-        using PyMOL's cmd.super command.
-        """
+
         pymol.finish_launching(['pymol', '-qc'])
         pymol.cmd.delete("all")
 
         pymol.cmd.load(target_pdb, "target_struct")
         pymol.cmd.load(mobile_pdb, "mobile_struct")
 
-        # cmd.super returns a tuple: (RMSD, aligned_atoms, raw_score, ...)
         alignment_result = pymol.cmd.super("mobile_struct and name CA", "target_struct and name CA")
         rmsd_score = alignment_result[0] if isinstance(alignment_result, tuple) else alignment_result
 

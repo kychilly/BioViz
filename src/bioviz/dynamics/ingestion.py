@@ -22,8 +22,8 @@ class TrajectoryIngestionEngine:
         self.universe: Optional[mda.Universe] = None
         self._load_universe()
 
+    # Loads topologies
     def _load_universe(self) -> None:
-        """Loads topology and trajectory into an MDAnalysis Universe."""
         if not os.path.exists(self.topology_path):
             raise FileNotFoundError(f"Topology file not found: {self.topology_path}")
         if not os.path.exists(self.trajectory_path):
@@ -36,9 +36,7 @@ class TrajectoryIngestionEngine:
             raise RuntimeError(f"Failed to load trajectory files into MDAnalysis Universe: {e}")
 
     def preprocess_trajectory(self, output_xtc_path: Optional[str] = None) -> mda.Universe:
-        """
-        Applies standard MD cleanup workflows safely, checking for box dimensions.
-        """
+        # MD cleanup
         if self.universe is None:
             raise ValueError("Universe is not initialized.")
 
@@ -50,7 +48,7 @@ class TrajectoryIngestionEngine:
 
         print("[BioViz] Running preprocessing pipeline...")
 
-        # Safely add PBC transformations only if box dimensions exist in the trajectory
+        # PBC transformations
         try:
             if self.universe.trajectory.ts.dimensions is not None:
                 transformations = [
@@ -64,7 +62,7 @@ class TrajectoryIngestionEngine:
         except Exception as e:
             print(f"[BioViz Notice] Skipping PBC transformations: {e}")
 
-        # Perform Least-Squares Backbone Alignment to Frame 0
+        # Least squares backbone alignment
         ref_universe = mda.Universe(self.topology_path, self.trajectory_path)
         align.AlignTraj(self.universe, ref_universe, select="protein and backbone",
                         in_memory=True).run()
