@@ -1,0 +1,2 @@
+[console_scripts]
+bioviz-render = bioviz.cli:main

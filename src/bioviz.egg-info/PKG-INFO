@@ -17,6 +17,7 @@ Requires-Dist: numpy
 Requires-Dist: biopython
 Requires-Dist: mdanalysis>=2.5.0
 Requires-Dist: numpy>=1.20.0
+Requires-Dist: imageio[ffmpeg]
 Requires-Dist: requests
 Dynamic: license-file
 
@@ -29,4 +30,4 @@ A Python package designed for structural biologists and researchers to automate 
 To install the package in editable mode for local development:
 
 ```bash
-pip install -e .
+pip install -bioviz .

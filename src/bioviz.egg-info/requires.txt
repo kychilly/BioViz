@@ -4,4 +4,5 @@ numpy
 biopython
 mdanalysis>=2.5.0
 numpy>=1.20.0
+imageio[ffmpeg]
 requests

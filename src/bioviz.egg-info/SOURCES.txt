@@ -8,7 +8,14 @@ src/bioviz.egg-info/entry_points.txt
 src/bioviz.egg-info/requires.txt
 src/bioviz.egg-info/top_level.txt
 src/bioviz/dynamics/__init__.py
+src/bioviz/dynamics/anomalies.py
+src/bioviz/dynamics/export.py
+src/bioviz/dynamics/generate_dashboard.py
 src/bioviz/dynamics/ingestion.py
+src/bioviz/dynamics/metrics.py
+src/bioviz/dynamics/renderer.py
+src/bioviz/dynamics/run_test.py
+src/bioviz/dynamics/timeline.py
 src/bioviz/mutations/__init__.py
 src/bioviz/mutations/align.py
 src/bioviz/mutations/domain.py
@@ -24,4 +31,6 @@ src/bioviz/rendering/__init__.py
 src/bioviz/rendering/cli.py
 src/bioviz/rendering/compiler.py
 src/bioviz/rendering/engine.py
+src/bioviz/rendering/ligand_approach.py
 src/bioviz/rendering/parser.py
+src/bioviz/rendering/protein_morph.py
