@@ -1,0 +1,2 @@
+position,mutation,status,clash_score,min_ca_distance_angstroms,hydrophobicity_delta,structural_flags
+1,T -> A,ANALYSIS_SUCCESS,0.0,3.79,2.5,"SIGNIFICANT_HYDROPHOBICITY_SHIFT, LOCATED_WITHIN_ACTIVE_SITE_PROXIMITY"

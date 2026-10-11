@@ -1,0 +1,23 @@
+{
+    "summary_metadata": {
+        "total_mutations_analyzed": 1,
+        "pipeline_version": "1.0.0"
+    },
+    "mutations": [
+        {
+            "position": 1,
+            "mutation": "T -> A",
+            "status": "ANALYSIS_SUCCESS",
+            "clash_score": 0.0,
+            "added_sidechain_atoms": [],
+            "nearest_neighbor_residue": 2,
+            "min_ca_distance_angstroms": 3.79,
+            "in_binding_pocket_window": true,
+            "hydrophobicity_delta": 2.5,
+            "structural_flags": [
+                "SIGNIFICANT_HYDROPHOBICITY_SHIFT",
+                "LOCATED_WITHIN_ACTIVE_SITE_PROXIMITY"
+            ]
+        }
+    ]
+}
